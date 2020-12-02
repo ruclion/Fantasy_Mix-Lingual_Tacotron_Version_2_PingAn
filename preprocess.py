@@ -10,10 +10,15 @@ from datasets import thcoss
 from datasets import Huawei
 from datasets import chunchun_CN
 from datasets import chunchun_EN
+from text_seq_assert import reverse_equal_original
 
 def write_metadata(metadata, out_dir):
 	with open(os.path.join(out_dir, 'train.txt'), 'w', encoding='utf-8') as f:
 		for m in metadata:
+			check_tag = reverse_equal_original(m[5])
+			if check_tag is False:
+				print('\n\n\n\n\n', m[5], '\n\n\n\n\n\n')
+			assert check_tag is True
 			f.write('|'.join([str(x) for x in m]) + '\n')
 	mel_frames = sum([int(m[4]) for m in metadata])
 	timesteps = sum([int(m[3]) for m in metadata])
@@ -54,13 +59,16 @@ def main():
 	if args.dataset == 'chunchun':
 		use_prosody = True
 
-		in_dir = os.path.join(args.base_dir, 'chunchun/english/chunchun_english_lj')
-		print('processing chunchun CN.../n')
-		metadata_1 = chunchun_EN.build_from_path(modified_hp, 0, 0, in_dir, mel_dir, lin_dir, wav_dir, args.n_jobs, tqdm=tqdm)
 
 		in_dir = os.path.join(args.base_dir, 'chunchun/chinese/chunchun_8k_all_v4')
 		print('processing chunchun EN.../n')
 		metadata_2 = chunchun_CN.build_from_path_CN(modified_hp, 0, 1, in_dir, use_prosody, mel_dir, lin_dir, wav_dir, args.n_jobs,tqdm=tqdm)
+
+		in_dir = os.path.join(args.base_dir, 'chunchun/english/chunchun_english_lj')
+		print('processing chunchun CN.../n')
+		metadata_1 = chunchun_EN.build_from_path(modified_hp, 0, 0, in_dir, mel_dir, lin_dir, wav_dir, args.n_jobs, tqdm=tqdm)
+		
+		print('meta1 len:', len(metadata_1), 'meta2 len:', len(metadata_2))
 		metadata = metadata_1 + metadata_2
 		
 	elif args.dataset == 'all':

@@ -1,3 +1,7 @@
+# 本版本的说明
+Fantasy Mix-Lingual Tacotron Version 3: PingAn
+这是从中文语言的代码, 借来用下, 结合Google-逸轩的版本改下, 同时便于对接商用vocoder等
+# 逸轩版本的说明
 逸轩那里拿到的跨语言代码, 本来的项目名称: TTS_Taco2_MultiSpeaker_AdversarialLoss_VAE_phoneme_CN&EN
 # Tacotron-2:
 Tensorflow implementation of DeepMind's Tacotron-2. A deep neural network architecture described in this paper: [Natural TTS synthesis by conditioning Wavenet on MEL spectogram predictions](https://arxiv.org/pdf/1712.05884.pdf)

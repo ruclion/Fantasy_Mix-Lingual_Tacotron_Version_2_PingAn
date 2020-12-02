@@ -7,7 +7,7 @@ hparams = tf.contrib.training.HParams(
 	# text, you may want to use "basic_cleaners" or "transliteration_cleaners".
 	#cleaners_cn='transliteration_cleaners',
 	#cleaners_en='english_cleaners',
-	cleaners='transliteration_cleaners',
+	cleaners='basic_cleaners',
 	#If you only have 1 GPU or want to use only one GPU, please set num_gpus=0 and specify the GPU idx on run. example:
 		#expample 1 GPU of index 2 (train on "/gpu2" only): CUDA_VISIBLE_DEVICES=2 python train.py --model='Tacotron' --hparams='tacotron_gpu_start_idx=2'
 	#If you want to train on multiple GPUs, simply specify the number of GPUs available, and the idx of the first GPU to use. example:
@@ -113,7 +113,7 @@ hparams = tf.contrib.training.HParams(
 	###########################################################################################################################################
 
 	#Tacotron
-	outputs_per_step = 3, #number of frames to generate at each decoding step (increase to speed up computation and allows for higher batch size, decreases G&L audio quality)
+	outputs_per_step = 2, #number of frames to generate at each decoding step (increase to speed up computation and allows for higher batch size, decreases G&L audio quality)
 	stop_at_any = True, #Determines whether the decoder should stop when predicting <stop> to any frame or to all of them (True works pretty well)
 
 	embedding_dim = 512, #dimension of embedding space
@@ -124,26 +124,33 @@ hparams = tf.contrib.training.HParams(
 	enc_conv_channels = 512, #number of encoder convolutions filters for each layer
 	encoder_lstm_units = 256, #number of lstm units for each direction (forward and backward)
 
-	#Softmax for speaker classfiers
-	loss_weight=0,
-	softmax_hidden_layer=256,
-	grad_rev_scale=1,
-	# multi-speakers:
-	speaker_dim=64,  # add same with encoder_output / concat
-	speaker_num=10,
+	######################################
+	# #Softmax for speaker classfiers
+	# loss_weight=0,
+	# softmax_hidden_layer=256,
+	# grad_rev_scale=1,
+	######################################
+
+	######################################
+	# # multi-speakers:
+	# speaker_dim=64,  # add same with encoder_output / concat
+	# speaker_num=10,
+	######################################
 
 	# multi-language:
 	language_dim=3,  # add same with encoder_output / concat
 	language_num=2,
 
-	# VAE
-	VAE_conv_num_layers=2,  # number of VAE convolutional layers
-	VAE_conv_kernel_size=(3, ),  # size of VAE convolution filters for each layer
-	VAE_conv_channels=512,  # number of VAE convolution filters for each layer
-	VAE_lstm_num_layers=2,
-	VAE_lstm_layer_size=256,
-    VAE_pool_size=512,
-	VAE_D_size=16,
+	######################################
+	# # VAE
+	# VAE_conv_num_layers=2,  # number of VAE convolutional layers
+	# VAE_conv_kernel_size=(3, ),  # size of VAE convolution filters for each layer
+	# VAE_conv_channels=512,  # number of VAE convolution filters for each layer
+	# VAE_lstm_num_layers=2,
+	# VAE_lstm_layer_size=256,
+    # VAE_pool_size=512,
+	# VAE_D_size=16,
+	######################################
 
 
 	#Attention mechanism
@@ -151,7 +158,8 @@ hparams = tf.contrib.training.HParams(
 	attention_dim = 128, #dimension of attention space
 	attention_filters = 32, #number of attention convolution filters
 	attention_kernel = (31, ), #kernel size of attention convolution
-	cumulative_weights = True, #Whether to cumulate (sum) all previous attention weights or simply feed previous weights (Recommended: True)
+	cumulative_weights = False, #Whether to cumulate (sum) all previous attention weights or simply feed previous weights (Recommended: True)
+	synthesis_constraint = False,
 
 	#Decoder
 	prenet_layers = [256, 256], #number of layers and number of units of prenet
@@ -182,54 +190,54 @@ hparams = tf.contrib.training.HParams(
 	predict_linear = True, #Whether to add a post-processing network to the Tacotron to predict linear spectrograms (True mode Not tested!!)
 	###########################################################################################################################################
 
-
-	#Wavenet
-	# Input type:
-	# 1. raw [-1, 1]
-	# 2. mulaw [-1, 1]
-	# 3. mulaw-quantize [0, mu]
-	# If input_type is raw or mulaw, network assumes scalar input and
-	# discretized mixture of logistic distributions output, otherwise one-hot
-	# input and softmax output are assumed.
-	#Model generatl type
-	input_type="raw",
-	quantize_channels=2 ** 16,  # 65536 (16-bit) (raw) or 256 (8-bit) (mulaw or mulaw-quantize) // number of classes = 256 <=> mu = 255
-
-	#Minimal scales ranges for MoL and Gaussian modeling
-	log_scale_min=float(np.log(1e-14)), #Mixture of logistic distributions minimal log scale
-	log_scale_min_gauss = float(np.log(1e-7)), #Gaussian distribution minimal allowed log scale
-
-	#model parameters
-	#To use Gaussian distribution as output distribution instead of mixture of logistics, set "out_channels = 2" instead of "out_channels = 10 * 3". (UNDER TEST)
-	out_channels = 2, #This should be equal to quantize channels when input type is 'mulaw-quantize' else: num_distributions * 3 (prob, mean, log_scale).
-	layers = 20, #Number of dilated convolutions (Default: Simplified Wavenet of Tacotron-2 paper)
-	stacks = 2, #Number of dilated convolution stacks (Default: Simplified Wavenet of Tacotron-2 paper)
-	residual_channels = 128, #Number of residual block input/output channels.
-	gate_channels = 256, #split in 2 in gated convolutions
-	skip_out_channels = 128, #Number of residual block skip convolution channels.
-	kernel_size = 3, #The number of inputs to consider in dilated convolutions.
-
-	#Upsampling parameters (local conditioning)
-	cin_channels = 80, #Set this to -1 to disable local conditioning, else it must be equal to num_mels!!
-	upsample_conditional_features = True, #Whether to repeat conditional features or upsample them (The latter is recommended)
-	upsample_type = '1D', #Type of the upsampling deconvolution. Can be ('1D' or '2D'). 1D spans all frequency bands for each frame while 2D spans "freq_axis_kernel_size" bands at a time
-	upsample_activation = 'LeakyRelu', #Activation function used during upsampling. Can be ('LeakyRelu', 'Relu' or None)
-	upsample_scales = [5, 5, 11], #prod(upsample_scales) should be equal to hop_size
-	freq_axis_kernel_size = 3, #Only used for 2D upsampling. This is the number of requency bands that are spanned at a time for each frame.
-	leaky_alpha = 0.4, #slope of the negative portion of LeakyRelu (LeakyRelu: y=x if x>0 else y=alpha * x)
-
-	#global conditioning
-	gin_channels = -1, #Set this to -1 to disable global conditioning, Only used for multi speaker dataset. It defines the depth of the embeddings (Recommended: 16)
-	use_speaker_embedding = True, #whether to make a speaker embedding
-	n_speakers = 5, #number of speakers (rows of the embedding)
-
-	#the bias debate! :)
-	use_bias = True, #Whether to use bias in convolutional layers of the Wavenet
-
-	#training samples length
-	max_time_sec = None, #Max time of audio for training. If None, we use max_time_steps.
-	max_time_steps = 11000, #Max time steps in audio used to train wavenet (decrease to save memory) (Recommend: 8000 on modest GPUs, 13000 on stronger ones)
 	###########################################################################################################################################
+	# #Wavenet
+	# # Input type:
+	# # 1. raw [-1, 1]
+	# # 2. mulaw [-1, 1]
+	# # 3. mulaw-quantize [0, mu]
+	# # If input_type is raw or mulaw, network assumes scalar input and
+	# # discretized mixture of logistic distributions output, otherwise one-hot
+	# # input and softmax output are assumed.
+	# #Model generatl type
+	# input_type="raw",
+	# quantize_channels=2 ** 16,  # 65536 (16-bit) (raw) or 256 (8-bit) (mulaw or mulaw-quantize) // number of classes = 256 <=> mu = 255
+
+	# #Minimal scales ranges for MoL and Gaussian modeling
+	# log_scale_min=float(np.log(1e-14)), #Mixture of logistic distributions minimal log scale
+	# log_scale_min_gauss = float(np.log(1e-7)), #Gaussian distribution minimal allowed log scale
+
+	# #model parameters
+	# #To use Gaussian distribution as output distribution instead of mixture of logistics, set "out_channels = 2" instead of "out_channels = 10 * 3". (UNDER TEST)
+	# out_channels = 2, #This should be equal to quantize channels when input type is 'mulaw-quantize' else: num_distributions * 3 (prob, mean, log_scale).
+	# layers = 20, #Number of dilated convolutions (Default: Simplified Wavenet of Tacotron-2 paper)
+	# stacks = 2, #Number of dilated convolution stacks (Default: Simplified Wavenet of Tacotron-2 paper)
+	# residual_channels = 128, #Number of residual block input/output channels.
+	# gate_channels = 256, #split in 2 in gated convolutions
+	# skip_out_channels = 128, #Number of residual block skip convolution channels.
+	# kernel_size = 3, #The number of inputs to consider in dilated convolutions.
+
+	# #Upsampling parameters (local conditioning)
+	# cin_channels = 80, #Set this to -1 to disable local conditioning, else it must be equal to num_mels!!
+	# upsample_conditional_features = True, #Whether to repeat conditional features or upsample them (The latter is recommended)
+	# upsample_type = '1D', #Type of the upsampling deconvolution. Can be ('1D' or '2D'). 1D spans all frequency bands for each frame while 2D spans "freq_axis_kernel_size" bands at a time
+	# upsample_activation = 'LeakyRelu', #Activation function used during upsampling. Can be ('LeakyRelu', 'Relu' or None)
+	# upsample_scales = [5, 5, 11], #prod(upsample_scales) should be equal to hop_size
+	# freq_axis_kernel_size = 3, #Only used for 2D upsampling. This is the number of requency bands that are spanned at a time for each frame.
+	# leaky_alpha = 0.4, #slope of the negative portion of LeakyRelu (LeakyRelu: y=x if x>0 else y=alpha * x)
+
+	# #global conditioning
+	# gin_channels = -1, #Set this to -1 to disable global conditioning, Only used for multi speaker dataset. It defines the depth of the embeddings (Recommended: 16)
+	# use_speaker_embedding = True, #whether to make a speaker embedding
+	# n_speakers = 5, #number of speakers (rows of the embedding)
+
+	# #the bias debate! :)
+	# use_bias = True, #Whether to use bias in convolutional layers of the Wavenet
+
+	# #training samples length
+	# max_time_sec = None, #Max time of audio for training. If None, we use max_time_steps.
+	# max_time_steps = 11000, #Max time steps in audio used to train wavenet (decrease to save memory) (Recommend: 8000 on modest GPUs, 13000 on stronger ones)
+	# ###########################################################################################################################################
 
 	#Tacotron Training
 	#Reproduction seeds
@@ -240,11 +248,11 @@ hparams = tf.contrib.training.HParams(
 	tacotron_swap_with_cpu = False, #Whether to use cpu as support to gpu for decoder computation (Not recommended: may cause major slowdowns! Only use when critical!)
 
 	#train/test split ratios, mini-batches sizes
-	tacotron_batch_size = 30, #number of training samples on each training steps
+	tacotron_batch_size = 32, #number of training samples on each training steps
 	#Tacotron Batch synthesis supports ~16x the training batch size (no gradients during testing). 
 	#Training Tacotron with unmasked paddings makes it aware of them, which makes synthesis times different from training. We thus recommend masking the encoder.
 	tacotron_synthesis_batch_size = 1, #DO NOT MAKE THIS BIGGER THAN 1 IF YOU DIDN'T TRAIN TACOTRON WITH "mask_encoder=True"!!
-	tacotron_test_size = 0.03, #% of data to keep as test data, if None, tacotron_test_batches must be not None. (5% is enough to have a good idea about overfit)
+	tacotron_test_size = 0.05, #% of data to keep as test data, if None, tacotron_test_batches must be not None. (5% is enough to have a good idea about overfit)
 	tacotron_test_batches = None, #number of test batches.
 
 	#Learning rate schedule
@@ -261,7 +269,7 @@ hparams = tf.contrib.training.HParams(
 	tacotron_adam_epsilon = 1e-6, #AdamOptimizer Epsilon parameter
 
 	#Regularization parameters
-	tacotron_reg_weight = 1e-7, #regularization weight (for L2 regularization)
+	tacotron_reg_weight = 1e-6, #regularization weight (for L2 regularization)
 	tacotron_scale_regularization = False, #Whether to rescale regularization weight to adapt for outputs range (used when reg_weight is high and biasing the model)
 	tacotron_zoneout_rate = 0.1, #zoneout rate for all LSTM cells in the network
 	tacotron_dropout_rate = 0.5, #dropout rate for all convolutional layers + prenet
@@ -285,43 +293,50 @@ hparams = tf.contrib.training.HParams(
 	tacotron_teacher_forcing_decay_alpha = 0., #teacher forcing ratio decay rate. Relevant if mode='scheduled'
 	###########################################################################################################################################
 
-	#Wavenet Training
-	wavenet_random_seed = 5339, # S=5, E=3, D=9 :)
-	wavenet_data_random_state = 1234, #random state for train test split repeatability
-
-	#performance parameters
-	wavenet_swap_with_cpu = False, #Whether to use cpu as support to gpu for synthesis computation (while loop).(Not recommended: may cause major slowdowns! Only use when critical!)
-
-	#train/test split ratios, mini-batches sizes
-	wavenet_batch_size = 8, #batch size used to train wavenet.
-	#During synthesis, there is no max_time_steps limitation so the model can sample much longer audio than 8k(or 13k) steps. (Audio can go up to 500k steps, equivalent to ~21sec on 24kHz)
-	#Usually your GPU can handle ~2x wavenet_batch_size during synthesis for the same memory amount during training (because no gradients to keep and ops to register for backprop)
-	wavenet_synthesis_batch_size = 10 * 2, #This ensure that wavenet synthesis goes up to 4x~8x faster when synthesizing multiple sentences. Watch out for OOM with long audios.
-	wavenet_test_size = 0.0441, #% of data to keep as test data, if None, wavenet_test_batches must be not None
-	wavenet_test_batches = None, #number of test batches.
-
-	#Learning rate schedule
-	wavenet_lr_schedule = 'exponential', #learning rate schedule. Can be ('exponential', 'noam')
-	wavenet_learning_rate = 1e-4, #wavenet initial learning rate
-	wavenet_warmup = float(4000), #Only used with 'noam' scheme. Defines the number of ascending learning rate steps.
-	wavenet_decay_rate = 0.5, #Only used with 'exponential' scheme. Defines the decay rate.
-	wavenet_decay_steps = 300000, #Only used with 'exponential' scheme. Defines the decay steps.
-
-	#Optimization parameters
-	wavenet_adam_beta1 = 0.9, #Adam beta1
-	wavenet_adam_beta2 = 0.999, #Adam beta2
-	wavenet_adam_epsilon = 1e-8, #Adam Epsilon
-
-	#Regularization parameters
-	wavenet_clip_gradients = False, #Whether the clip the gradients during wavenet training.
-	wavenet_ema_decay = 0.9999, #decay rate of exponential moving average
-	wavenet_weight_normalization = False, #Whether to Apply Saliman & Kingma Weight Normalization (reparametrization) technique. (NEEDS VERIFICATION)
-	wavenet_init_scale = 1., #Only relevent if weight_normalization=True. Defines the initial scale in data dependent initialization of parameters.
-	wavenet_dropout = 0.05, #drop rate of wavenet layers
-
-	#Tacotron-2 integration parameters
-	train_with_GTA = False, #Whether to use GTA mels to train WaveNet instead of ground truth mels.
 	###########################################################################################################################################
+	# #Wavenet Training
+	# wavenet_random_seed = 5339, # S=5, E=3, D=9 :)
+	# wavenet_data_random_state = 1234, #random state for train test split repeatability
+
+	# #performance parameters
+	# wavenet_swap_with_cpu = False, #Whether to use cpu as support to gpu for synthesis computation (while loop).(Not recommended: may cause major slowdowns! Only use when critical!)
+
+	# #train/test split ratios, mini-batches sizes
+	# wavenet_batch_size = 8, #batch size used to train wavenet.
+	# #During synthesis, there is no max_time_steps limitation so the model can sample much longer audio than 8k(or 13k) steps. (Audio can go up to 500k steps, equivalent to ~21sec on 24kHz)
+	# #Usually your GPU can handle ~2x wavenet_batch_size during synthesis for the same memory amount during training (because no gradients to keep and ops to register for backprop)
+	# wavenet_synthesis_batch_size = 10 * 2, #This ensure that wavenet synthesis goes up to 4x~8x faster when synthesizing multiple sentences. Watch out for OOM with long audios.
+	# wavenet_test_size = 0.0441, #% of data to keep as test data, if None, wavenet_test_batches must be not None
+	# wavenet_test_batches = None, #number of test batches.
+
+	# #Learning rate schedule
+	# wavenet_lr_schedule = 'exponential', #learning rate schedule. Can be ('exponential', 'noam')
+	# wavenet_learning_rate = 1e-4, #wavenet initial learning rate
+	# wavenet_warmup = float(4000), #Only used with 'noam' scheme. Defines the number of ascending learning rate steps.
+	# wavenet_decay_rate = 0.5, #Only used with 'exponential' scheme. Defines the decay rate.
+	# wavenet_decay_steps = 300000, #Only used with 'exponential' scheme. Defines the decay steps.
+
+	# #Optimization parameters
+	# wavenet_adam_beta1 = 0.9, #Adam beta1
+	# wavenet_adam_beta2 = 0.999, #Adam beta2
+	# wavenet_adam_epsilon = 1e-8, #Adam Epsilon
+
+	# #Regularization parameters
+	# wavenet_clip_gradients = False, #Whether the clip the gradients during wavenet training.
+	# wavenet_ema_decay = 0.9999, #decay rate of exponential moving average
+	# wavenet_weight_normalization = False, #Whether to Apply Saliman & Kingma Weight Normalization (reparametrization) technique. (NEEDS VERIFICATION)
+	# wavenet_init_scale = 1., #Only relevent if weight_normalization=True. Defines the initial scale in data dependent initialization of parameters.
+	# wavenet_dropout = 0.05, #drop rate of wavenet layers
+
+	# #Tacotron-2 integration parameters
+	# train_with_GTA = False, #Whether to use GTA mels to train WaveNet instead of ground truth mels.
+	###########################################################################################################################################
+
+	GL_on_GPU = True,
+	magnitude_power = 1.,
+
+	forward_attention = True,
+	speedup = 1,
 
 	#Eval sentences (if no eval text file was specified during synthesis, these sentences are used for eval)
 	sentences = [
