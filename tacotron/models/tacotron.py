@@ -93,7 +93,7 @@ class Tacotron():
 		self.tower_stop_token_prediction = []
 		self.tower_mel_outputs = []
 		self.tower_linear_outputs = []
-		self.tower_predict_speaker_labels = []
+		# self.tower_predict_speaker_labels = []
 
 		tower_embedded_inputs = []
 		tower_enc_conv_output_shape = []
@@ -254,7 +254,7 @@ class Tacotron():
 					self.tower_alignments.append(alignments)
 					self.tower_stop_token_prediction.append(stop_token_prediction)
 					self.tower_mel_outputs.append(mel_outputs)
-					self.tower_predict_speaker_labels.append(predict_speaker_labels)
+					# self.tower_predict_speaker_labels.append(predict_speaker_labels)
 					tower_embedded_inputs.append(embedded_inputs)
 					tower_enc_conv_output_shape.append(enc_conv_output_shape)
 					tower_encoder_outputs.append(encoder_outputs)
@@ -310,7 +310,7 @@ class Tacotron():
 		self.tower_stop_token_loss = []
 		self.tower_regularization_loss = []
 		self.tower_linear_loss = []
-		self.tower_adversarial_loss = []
+		# self.tower_adversarial_loss = []
 		self.tower_loss = []
 
 		total_before_loss = 0
@@ -318,7 +318,7 @@ class Tacotron():
 		total_stop_token_loss = 0
 		total_regularization_loss = 0
 		total_linear_loss = 0
-		total_adversarial_loss = 0
+		# total_adversarial_loss = 0
 		total_loss = 0
 
 		gpus = ["/gpu:{}".format(i) for i in range(hp.tacotron_gpu_start_idx, hp.tacotron_gpu_start_idx+hp.tacotron_num_gpus)]
@@ -379,13 +379,13 @@ class Tacotron():
 					# Compute the speaker adversarial training loss
 					# speaker_prediction: predicted speaker label for each time step of input, with shape [N, T_in, speaker_num]
 					# speaker_targets: one-hot speaker label of current input, from shape [N, speaker_num] to [N, 1, speaker_num] to [N, T_in, speaker_num]
-					seq_len = tf.shape(self.tower_predict_speaker_labels[i])[1]
-					speaker_targets = tf.one_hot(self.tower_speaker_labels[i], hp.speaker_num, dtype=tf.float32)
-					speaker_targets = tf.tile(tf.reshape(speaker_targets, shape=[-1, 1, hp.speaker_num]),
-											  multiples=[1, seq_len, 1])
-					adversarial_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(
-						labels=speaker_targets,
-						logits=self.tower_predict_speaker_labels[i]))
+					# seq_len = tf.shape(self.tower_predict_speaker_labels[i])[1]
+					# speaker_targets = tf.one_hot(self.tower_speaker_labels[i], hp.speaker_num, dtype=tf.float32)
+					# speaker_targets = tf.tile(tf.reshape(speaker_targets, shape=[-1, 1, hp.speaker_num]),
+					# 						  multiples=[1, seq_len, 1])
+					# adversarial_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(
+					# 	labels=speaker_targets,
+					# 	logits=self.tower_predict_speaker_labels[i]))
 
 					# Compute final loss term
 					self.tower_before_loss.append(before)
@@ -393,8 +393,9 @@ class Tacotron():
 					self.tower_stop_token_loss.append(stop_token_loss)
 					self.tower_regularization_loss.append(regularization)
 					self.tower_linear_loss.append(linear_loss)
-					self.tower_adversarial_loss.append(adversarial_loss)
-					loss = before + after + stop_token_loss + regularization + linear_loss + hp.loss_weight * adversarial_loss + self.kl_div
+					# self.tower_adversarial_loss.append(adversarial_loss)
+					# loss = before + after + stop_token_loss + regularization + linear_loss + hp.loss_weight * adversarial_loss + self.kl_div
+					loss = before + after + stop_token_loss + regularization + linear_loss
 					self.tower_loss.append(loss)
 
 		for i in range(hp.tacotron_num_gpus):
@@ -403,7 +404,7 @@ class Tacotron():
 			total_stop_token_loss += self.tower_stop_token_loss[i]
 			total_regularization_loss += self.tower_regularization_loss[i]
 			total_linear_loss += self.tower_linear_loss[i]
-			total_adversarial_loss +=self.tower_adversarial_loss[i]
+			# total_adversarial_loss +=self.tower_adversarial_loss[i]
 			total_loss += self.tower_loss[i]
 
 		self.before_loss = total_before_loss / hp.tacotron_num_gpus
@@ -411,7 +412,7 @@ class Tacotron():
 		self.stop_token_loss = total_stop_token_loss / hp.tacotron_num_gpus
 		self.regularization_loss = total_regularization_loss / hp.tacotron_num_gpus
 		self.linear_loss = total_linear_loss / hp.tacotron_num_gpus
-		self.adversarial_loss = total_adversarial_loss / hp.tacotron_num_gpus
+		# self.adversarial_loss = total_adversarial_loss / hp.tacotron_num_gpus
 		self.loss = total_loss / hp.tacotron_num_gpus
 
 	def add_optimizer(self, global_step):

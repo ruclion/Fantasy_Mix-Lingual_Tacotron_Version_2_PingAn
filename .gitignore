@@ -1,4 +1,5 @@
 chunchun/
+chunchun_gz/
 training_data/
 *.pyc
 logs-Tacotron/

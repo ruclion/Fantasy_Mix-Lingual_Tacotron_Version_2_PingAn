@@ -50,7 +50,7 @@ def add_train_stats(model, hparams):
 		
 		tf.summary.scalar('regularization_loss', model.regularization_loss)
 		tf.summary.scalar('stop_token_loss', model.stop_token_loss)
-		tf.summary.scalar('adversarial_loss', model.adversarial_loss)
+		# tf.summary.scalar('adversarial_loss', model.adversarial_loss)
 		tf.summary.scalar('loss', model.loss)
 		tf.summary.scalar('learning_rate', model.learning_rate) #Control learning rate decay speed
 		if hparams.tacotron_teacher_forcing_mode == 'scheduled':
@@ -212,14 +212,15 @@ def train(log_dir, args, hparams):
 			#Training loop
 			while not coord.should_stop() and step < args.tacotron_train_steps:
 				start_time = time.time()
-				step, loss, opt, D_mean, D_var = sess.run([global_step, model.loss, model.optimize, model.D_mean, model.D_var])
+				# step, loss, opt, D_mean, D_var = sess.run([global_step, model.loss, model.optimize, model.D_mean, model.D_var])
+				step, loss, opt = sess.run([global_step, model.loss, model.optimize])
 				time_window.append(time.time() - start_time)
 				loss_window.append(loss)
 				message = 'Step {:7d} [{:.3f} sec/step, loss={:.5f}, avg_loss={:.5f}]'.format(
 					step, time_window.average, loss, loss_window.average)
-				print('D_mean: ',D_mean[0][0], 'D_var:',D_var[0][0], '\n')
+				# print('D_mean: ',D_mean[0][0], 'D_var:',D_var[0][0], '\n')
 				log(message, end='\r', slack=(step % args.checkpoint_interval == 0))
-				if loss > 100 or np.isnan(loss):
+				if loss > 200 or np.isnan(loss):
 					log('Loss exploded to {:.5f} at step {}'.format(loss, step))
 					raise Exception('Loss exploded')
 
