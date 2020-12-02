@@ -134,26 +134,35 @@ class Tacotron():
 
 					#For shape visualization purpose
 					enc_conv_output_shape = encoder_cell.conv_output_shape
+					
+					################################################################################################
+					# # Adversarial Speaker-Classifiers,	input:encoder_output,output:predicted speaker_label
+					# speaker_classify = Speaker_Classifier(is_training, layer_size=hp.softmax_hidden_layer,
+					# 									  speaker_size=hp.speaker_num)
+					# predict_speaker_labels = speaker_classify(encoder_outputs, hp.grad_rev_scale)
+					################################################################################################
 
-					# Adversarial Speaker-Classifiers,	input:encoder_output,output:predicted speaker_label
-					speaker_classify = Speaker_Classifier(is_training, layer_size=hp.softmax_hidden_layer,
-														  speaker_size=hp.speaker_num)
-					predict_speaker_labels = speaker_classify(encoder_outputs, hp.grad_rev_scale)
 
-					# Variational AutoEncoder
-					if is_training:
-						VAE_cell = VAECell(VAEConvolutions(is_training, hparams=hp, scope='VAE_convolutions'),
-										   VAERNN(is_training, layers=hp.VAE_lstm_num_layers,
-												  size=hp.VAE_lstm_layer_size,
-												  zoneout=hp.tacotron_zoneout_rate, scope='VAE_LSTM'), hp.VAE_pool_size, hp.VAE_D_size)
-						residual_encoding, self.kl_div, self.D_mean, self.D_var = VAE_cell(tower_mel_targets[i], hp.tacotron_batch_size)
 
-					elif is_evaluating:
-						residual_encoding,self.kl_div = tf.zeros([hp.tacotron_batch_size, hp.VAE_D_size], dtype=tf.float32), 0
-					else:
-						residual_encoding = tf.zeros([hp.tacotron_synthesis_batch_size, hp.VAE_D_size],
-													 dtype=tf.float32)
-					self.residual_encoding=residual_encoding
+					################################################################################################
+					# # Variational AutoEncoder
+					# if is_training:
+					# 	VAE_cell = VAECell(VAEConvolutions(is_training, hparams=hp, scope='VAE_convolutions'),
+					# 					   VAERNN(is_training, layers=hp.VAE_lstm_num_layers,
+					# 							  size=hp.VAE_lstm_layer_size,
+					# 							  zoneout=hp.tacotron_zoneout_rate, scope='VAE_LSTM'), hp.VAE_pool_size, hp.VAE_D_size)
+					# 	residual_encoding, self.kl_div, self.D_mean, self.D_var = VAE_cell(tower_mel_targets[i], hp.tacotron_batch_size)
+
+					# elif is_evaluating:
+					# 	residual_encoding,self.kl_div = tf.zeros([hp.tacotron_batch_size, hp.VAE_D_size], dtype=tf.float32), 0
+					# else:
+					# 	residual_encoding = tf.zeros([hp.tacotron_synthesis_batch_size, hp.VAE_D_size],
+					# 								 dtype=tf.float32)
+					# self.residual_encoding=residual_encoding
+					################################################################################################
+
+
+
 					#Decoder Parts
 					#Attention Decoder Prenet
 					prenet = Prenet(is_training, layers_sizes=hp.prenet_layers, drop_rate=hp.tacotron_dropout_rate, scope='decoder_prenet')
@@ -176,7 +185,7 @@ class Tacotron():
 						decoder_lstm,
 						embedded_speaker_label,
 						embedded_language_label,
-						residual_encoding,
+						# residual_encoding,
 						frame_projection,
 						stop_projection)
 

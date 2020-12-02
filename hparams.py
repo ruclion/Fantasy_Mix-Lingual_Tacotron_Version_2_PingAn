@@ -132,9 +132,9 @@ hparams = tf.contrib.training.HParams(
 	######################################
 
 	######################################
-	# # multi-speakers:
-	# speaker_dim=64,  # add same with encoder_output / concat
-	# speaker_num=10,
+	# multi-speakers:
+	speaker_dim=64,  # add same with encoder_output / concat
+	speaker_num=10,
 	######################################
 
 	# multi-language:
