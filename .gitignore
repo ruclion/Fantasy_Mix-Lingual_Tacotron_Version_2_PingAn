@@ -1,0 +1,4 @@
+chunchun/
+training_data/
+*.pyc
+logs-Tacotron/
